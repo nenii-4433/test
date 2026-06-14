@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout — RawTee</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div class="container checkout-grid">
 
       <form class="checkout-form" id="checkout-form">
-        <h2 class="form-title">Shipping Information</h2>
+        <h2 class="form-title">Lock In Your Fit</h2>
 
         <div id="alert-box"></div>
 
@@ -81,10 +81,10 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px" id="pay-btn">
-          Proceed to Payment
+        <button type="submit" class="btn btn-primary btn-lg btn-glow" style="width:100%;margin-top:8px" id="pay-btn">
+          Secure the Fit →
         </button>
-        <p class="secure-note">🔒 Secured by SafePay — your card details are never stored on our servers</p>
+        <p class="secure-note">🔒 SafePay secured — your card details never touch our servers</p>
       </form>
 
       <aside class="order-summary">
@@ -92,21 +92,29 @@
         <div class="summary-product">
           <img src="/images/MZCHYHAM2551-media-1.jpg" alt="Product" id="summary-image">
           <div class="summary-product-info">
-            <h4 id="summary-name">RawTee Graphic Print Tee</h4>
+            <h4 id="summary-name">RawTee Nike Print Shirt White</h4>
             <p id="summary-qty">Qty: 1</p>
           </div>
         </div>
+        <div class="summary-row summary-compare" id="summary-compare-row">
+          <span>Was</span>
+          <span class="price-compare" id="summary-compare">PKR 3,000</span>
+        </div>
         <div class="summary-row">
           <span>Subtotal</span>
-          <span id="summary-subtotal">Rs. 10</span>
+          <span id="summary-subtotal">PKR 2,000</span>
+        </div>
+        <div class="summary-row summary-savings">
+          <span>You save</span>
+          <span id="summary-savings" style="color:var(--success)">PKR 1,000</span>
         </div>
         <div class="summary-row">
           <span>Shipping</span>
-          <span style="color:var(--success)">Free</span>
+          <span id="summary-shipping">PKR 200</span>
         </div>
         <div class="summary-row total">
           <span>Total</span>
-          <span id="summary-total">Rs. 10</span>
+          <span id="summary-total">PKR 2,000</span>
         </div>
       </aside>
 

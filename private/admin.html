@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard — RawTee</title>
+  <meta name="robots" content="noindex, nofollow">
+  <title>Order Dashboard — RawTee</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
   <header class="header">
     <div class="container header-inner">
-      <a href="/" class="logo">Raw<span>Tee</span> Admin</a>
+      <a href="/" class="logo">Raw<span>Tee</span> Ops</a>
       <nav class="nav">
         <a href="/">← Store</a>
         <button class="btn btn-outline btn-sm" id="logout-btn" style="display:none">Logout</button>
@@ -23,21 +24,19 @@
   <main class="admin-page">
     <div class="container">
 
-      <!-- Login -->
       <div class="login-card" id="login-section">
-        <h1>Admin Login</h1>
-        <p>Enter your password to access the order dashboard.</p>
+        <h1>Dashboard Login</h1>
+        <p>Enter your password to access orders.</p>
         <div id="login-error"></div>
         <form id="login-form">
           <div class="form-group">
             <label for="password">Password</label>
-            <input type="password" id="password" required placeholder="Enter admin password">
+            <input type="password" id="password" required placeholder="Enter password">
           </div>
           <button type="submit" class="btn btn-primary" style="width:100%">Login</button>
         </form>
       </div>
 
-      <!-- Dashboard -->
       <div id="dashboard-section" style="display:none">
         <div class="admin-header">
           <h1>Order Dashboard</h1>

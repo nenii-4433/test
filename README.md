@@ -32,7 +32,10 @@ copy .env.example .env
 | `SAFEPAY_SECRET_KEY` | Secret API key (never share publicly) |
 | `SAFEPAY_ENV` | `sandbox` for testing, `production` for live |
 | `SMTP_USER` / `SMTP_PASS` | Email credentials (Gmail: use an [App Password](https://myaccount.google.com/apppasswords)) |
-| `ADMIN_PASSWORD` | Password for `/admin.html` |
+| `ADMIN_PASSWORD` | Password for the admin dashboard |
+| `ADMIN_PATH` | Secret admin URL path (default: `/rawtee-ops-x7k9m2`) |
+| `MONGODB_URI` | MongoDB Atlas connection string |
+| `MONGODB_DB_NAME` | Database name (default: `rawtee`) |
 | `STORE_URL` | Your site URL (default: `http://localhost:3000`) |
 
 ### 3. Start the server
@@ -45,7 +48,7 @@ Open **http://localhost:3000** in your browser.
 
 - **Store:** http://localhost:3000
 - **Checkout:** http://localhost:3000/checkout.html
-- **Admin:** http://localhost:3000/admin.html
+- **Admin:** http://localhost:3000/rawtee-ops-x7k9m2
 
 ### 4. Test a payment
 
@@ -74,21 +77,21 @@ Update the HTML content in `public/index.html` (features, reviews, FAQ) to match
 
 ```
 ├── server.js              # Backend API, SafePay, email, orders
+├── db.js                  # MongoDB order storage
+├── private/admin.html     # Admin dashboard (served at ADMIN_PATH)
 ├── public/
 │   ├── index.html         # Product page
 │   ├── checkout.html      # Checkout form
 │   ├── success.html       # Order confirmation
-│   ├── admin.html         # Admin dashboard
 │   ├── css/style.css      # All styles
 │   ├── js/                # Frontend scripts
 │   └── images/            # Product images
-├── data/orders.json       # Order storage (auto-created)
 └── .env                   # Your secrets (not committed)
 ```
 
 ## Admin Dashboard
 
-1. Go to `/admin.html`
+1. Go to your admin URL (default `/rawtee-ops-x7k9m2`)
 2. Log in with your `ADMIN_PASSWORD`
 3. View all orders, customer details, and revenue
 4. Update order status (processing, shipped, delivered, etc.)
@@ -108,8 +111,10 @@ Update the HTML content in `public/index.html` (features, reviews, FAQ) to match
 1. Switch `SAFEPAY_ENV` from `sandbox` to `production`
 2. Replace sandbox keys with production keys from SafePay dashboard
 3. Set `STORE_URL` to your production domain
-4. Deploy to a host that supports Node.js (Railway, Render, VPS, etc.)
-5. Optional: set webhook URL in SafePay dashboard to `https://yourdomain.com/api/safepay/webhook`
+4. Add `MONGODB_URI` and `MONGODB_DB_NAME` to your host's environment variables (Vercel, Railway, etc.)
+5. In [MongoDB Atlas](https://cloud.mongodb.com) → **Network Access**, allow your server IP (or `0.0.0.0/0` for Vercel/serverless)
+6. Deploy to a host that supports Node.js (Vercel, Railway, Render, VPS, etc.)
+7. Optional: set webhook URL in SafePay dashboard to `https://yourdomain.com/api/safepay/webhook`
 
 ## License
 

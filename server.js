@@ -1,19 +1,19 @@
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
-const fs = require("fs");
 const crypto = require("crypto");
 const { Safepay } = require("@sfpy/node-sdk");
 const SafepayCore = require("@sfpy/node-core");
 const nodemailer = require("nodemailer");
+const {
+  getOrders,
+  getOrderByOrderId,
+  createOrder,
+  updateOrderByOrderId,
+} = require("./db");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const IS_VERCEL = Boolean(process.env.VERCEL);
-const DATA_DIR = IS_VERCEL
-  ? path.join("/tmp", "store-data")
-  : path.join(__dirname, "data");
-const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
 
 function getStoreUrl() {
   if (process.env.STORE_URL) return process.env.STORE_URL.replace(/\/$/, "");
@@ -45,51 +45,72 @@ const safepayCore = process.env.SAFEPAY_SECRET_KEY
   : null;
 
 // ── Product config (edit these to match your product) ──
+const PRICING = {
+  printed: { price: 2000, compareAt: 3000 },
+  plain: { price: 1900, compareAt: 2400 },
+};
+
+const SHIPPING_COST = 200;
+
+function getShirtType(shirtName) {
+  if (!shirtName) return "printed";
+  return shirtName.toLowerCase().includes("plain") ? "plain" : "printed";
+}
+
+function getShirtPricing(shirtName) {
+  return PRICING[getShirtType(shirtName)];
+}
+
 const PRODUCT = {
-  id: "rawtee-graphic-tee",
-  name: "RawTee Graphic Print Tee",
+  id: "rawtee-shirts",
+  name: "RawTee Nike Print Shirt White",
   description:
-    "Premium cotton graphic tee with bold artistic print. Available in classic white and black. Soft fabric, relaxed fit, and streetwear-ready style.",
-  price: 10,
+    "White tee, loud Nike graphic, heavy cotton. Clean fit that hits different — wear it out, wear it daily, wear it proud.",
+  price: PRICING.printed.price,
+  compareAt: PRICING.printed.compareAt,
   currency: "pkr",
   image: "/images/MZCHYHAM2551-media-1.jpg",
   images: [
-    "/images/MZCHYHAM2551-media-1.jpg",
-    "/images/MZCHYHAM2551-media-2.jpg",
-    "/images/MZCHYHAM2551-media-3.jpg",
-    "/images/MZCHYHAM2551-media-4.jpg",
+    {
+      src: "/images/MZCHYHAM2551-media-1.jpg",
+      name: "RawTee Nike Print Shirt White",
+      type: "printed",
+      price: 2000,
+      compareAt: 3000,
+      description:
+        "White tee, loud Nike graphic, heavy cotton. Clean fit that hits different — wear it out, wear it daily, wear it proud.",
+    },
+    {
+      src: "/images/MZCHYHAM2551-media-2.jpg",
+      name: "RawTee Nike Print Shirt Black",
+      type: "printed",
+      price: 2000,
+      compareAt: 3000,
+      description:
+        "All-black base with a fire Nike print that pops. Dark mode energy — built for nights out, link-ups, and looking sharp without trying.",
+    },
+    {
+      src: "/images/MZCHYHAM2551-media-3.jpg",
+      name: "RawTee Plain T Shirt White",
+      type: "plain",
+      price: 1900,
+      compareAt: 2400,
+      description:
+        "Plain white tee, zero noise — just a solid fit. Layer it, gym it, chill in it. The essential every guy needs in rotation.",
+    },
+    {
+      src: "/images/MZCHYHAM2551-media-4.jpg",
+      name: "RawTee Plain T Shirt Black",
+      type: "plain",
+      price: 1900,
+      compareAt: 2400,
+      description:
+        "Black plain tee — the ultimate go-to. Matches everything, feels premium, never misses. Lowkey flex, highkey comfortable.",
+    },
   ],
 };
 
 // ── Helpers ──
-function ensureDataDir() {
-  try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, "[]");
-  } catch (err) {
-    console.error("Could not initialize order storage:", err.message);
-  }
-}
-
-function readOrders() {
-  try {
-    ensureDataDir();
-    if (!fs.existsSync(ORDERS_FILE)) return [];
-    return JSON.parse(fs.readFileSync(ORDERS_FILE, "utf8"));
-  } catch {
-    return [];
-  }
-}
-
-function writeOrders(orders) {
-  try {
-    ensureDataDir();
-    fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
-  } catch (err) {
-    console.error("Could not save orders:", err.message);
-  }
-}
-
 function generateOrderId() {
   return "ORD-" + Date.now().toString(36).toUpperCase() + crypto.randomBytes(3).toString("hex").toUpperCase();
 }
@@ -124,26 +145,25 @@ function createMailer() {
 async function markOrderPaid(order, paymentMeta = {}) {
   if (!order || order.status !== "pending") return order;
 
-  order.status = "paid";
-  order.paidAt = new Date().toISOString();
-  Object.assign(order, paymentMeta);
+  const patch = {
+    status: "paid",
+    paidAt: new Date().toISOString(),
+    ...paymentMeta,
+  };
 
-  const orders = readOrders();
-  const idx = orders.findIndex((o) => o.orderId === order.orderId);
-  if (idx !== -1) orders[idx] = order;
-  writeOrders(orders);
+  let updated = await updateOrderByOrderId(order.orderId, patch);
+  if (!updated) return order;
 
-  if (!order.emailSent) {
+  if (!updated.emailSent) {
     try {
-      await sendOrderConfirmation(order);
-      order.emailSent = true;
-      writeOrders(orders);
+      await sendOrderConfirmation(updated);
+      updated = await updateOrderByOrderId(order.orderId, { emailSent: true });
     } catch (e) {
       console.error("Email error:", e.message);
     }
   }
 
-  return order;
+  return updated;
 }
 
 async function sendOrderConfirmation(order) {
@@ -194,6 +214,17 @@ async function sendOrderConfirmation(order) {
 }
 
 // ── Middleware ──
+const ADMIN_PATH = process.env.ADMIN_PATH || "/rawtee-ops-x7k9m2";
+const ADMIN_FILE = path.join(__dirname, "private", "admin.html");
+
+app.get(ADMIN_PATH, (req, res) => {
+  res.sendFile(ADMIN_FILE);
+});
+
+app.get("/admin.html", (_req, res) => {
+  res.status(404).send("Not found");
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -211,12 +242,23 @@ function requireAdmin(req, res, next) {
 // ── API Routes ──
 
 app.get("/api/config", (req, res) => {
+  const enrichImage = (img) => ({
+    ...img,
+    priceFormatted: formatPrice(img.price, PRODUCT.currency),
+    compareAtFormatted: formatPrice(img.compareAt, PRODUCT.currency),
+  });
+
   res.json({
     safepayPublicKey: process.env.SAFEPAY_PUBLIC_KEY || "",
     safepayEnv,
     product: {
       ...PRODUCT,
       priceFormatted: formatPrice(PRODUCT.price, PRODUCT.currency),
+      compareAtFormatted: formatPrice(PRODUCT.compareAt, PRODUCT.currency),
+      images: PRODUCT.images.map(enrichImage),
+      pricing: PRICING,
+      shipping: SHIPPING_COST,
+      shippingFormatted: formatPrice(SHIPPING_COST, PRODUCT.currency),
     },
   });
 });
@@ -226,7 +268,7 @@ app.post("/api/create-checkout-session", async (req, res) => {
     return res.status(500).json({ error: "SafePay is not configured. Add SAFEPAY keys to .env" });
   }
 
-  const { name, email, phone, address, city, state, zip, country, quantity = 1 } = req.body;
+  const { name, email, phone, address, city, state, zip, country, quantity = 1, shirtName } = req.body;
 
   if (!name || !email || !address || !city || !state || !zip || !country) {
     return res.status(400).json({ error: "Please fill in all required fields." });
@@ -235,7 +277,10 @@ app.post("/api/create-checkout-session", async (req, res) => {
   const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
   const orderId = generateOrderId();
   const storeUrl = getStoreUrl();
-  const totalAmount = safepayAmount(PRODUCT.price * qty, PRODUCT.currency);
+  const shirtPricing = getShirtPricing(shirtName || PRODUCT.name);
+  const unitPrice = shirtPricing.price;
+  const subtotal = unitPrice * qty;
+  const totalAmount = safepayAmount(subtotal + SHIPPING_COST, PRODUCT.currency);
   const currency = PRODUCT.currency.toUpperCase();
 
   try {
@@ -253,8 +298,7 @@ app.post("/api/create-checkout-session", async (req, res) => {
       webhooks: true,
     });
 
-    const orders = readOrders();
-    orders.unshift({
+    const order = {
       orderId,
       tracker: payment.token,
       status: "pending",
@@ -267,16 +311,23 @@ app.post("/api/create-checkout-session", async (req, res) => {
       zip,
       country,
       quantity: qty,
-      productName: PRODUCT.name,
-      total: PRODUCT.price * qty,
+      productName: shirtName || PRODUCT.name,
+      unitPrice,
+      compareAt: shirtPricing.compareAt,
+      shipping: SHIPPING_COST,
+      subtotal,
+      total: subtotal + SHIPPING_COST,
       currency: PRODUCT.currency,
       createdAt: new Date().toISOString(),
-    });
-    writeOrders(orders);
+    };
+    await createOrder(order);
 
     res.json({ url: checkoutUrl });
   } catch (err) {
-    console.error("SafePay error:", err.response?.data || err.message);
+    console.error("Checkout error:", err.response?.data || err.message);
+    if (err.message?.includes("MONGODB_URI")) {
+      return res.status(500).json({ error: "Order storage is not configured." });
+    }
     res.status(500).json({ error: "Could not create checkout session. Please try again." });
   }
 });
@@ -306,8 +357,7 @@ async function fetchSafepayPaymentState(tracker) {
 }
 
 async function verifySafepayPayment({ tracker, sig, orderId }) {
-  const orders = readOrders();
-  const order = orders.find((o) => o.orderId === orderId);
+  const order = await getOrderByOrderId(orderId);
 
   if (!order) return { valid: false, order: null, reason: "order_not_found" };
   if (order.tracker !== tracker) return { valid: false, order, reason: "tracker_mismatch" };
@@ -372,15 +422,19 @@ app.get("/api/safepay/callback", handleSafepayCallback);
 app.post("/api/safepay/callback", handleSafepayCallback);
 
 // Verify order status (for success page)
-app.get("/api/verify-order/:orderId", (req, res) => {
-  const orders = readOrders();
-  const order = orders.find((o) => o.orderId === req.params.orderId);
-  if (!order) return res.status(404).json({ error: "Order not found" });
+app.get("/api/verify-order/:orderId", async (req, res) => {
+  try {
+    const order = await getOrderByOrderId(req.params.orderId);
+    if (!order) return res.status(404).json({ error: "Order not found" });
 
-  res.json({
-    paid: order.status === "paid",
-    order,
-  });
+    res.json({
+      paid: order.status === "paid",
+      order,
+    });
+  } catch (err) {
+    console.error("Verify order error:", err.message);
+    res.status(500).json({ error: "Could not verify order" });
+  }
 });
 
 // SafePay webhook (optional backup for payment confirmation)
@@ -394,8 +448,7 @@ app.post("/api/safepay/webhook", async (req, res) => {
     const data = req.body?.data;
     const orderId = data?.order_id || data?.orderId;
     if (orderId) {
-      const orders = readOrders();
-      const order = orders.find((o) => o.orderId === orderId);
+      const order = await getOrderByOrderId(orderId);
       if (order) await markOrderPaid(order, { webhookData: data });
     }
 
@@ -417,46 +470,58 @@ app.post("/api/admin/login", (req, res) => {
   res.json({ token });
 });
 
-app.get("/api/admin/orders", requireAdmin, (req, res) => {
-  res.json(readOrders());
+app.get("/api/admin/orders", requireAdmin, async (req, res) => {
+  try {
+    res.json(await getOrders());
+  } catch (err) {
+    console.error("Admin orders error:", err.message);
+    res.status(500).json({ error: "Could not load orders" });
+  }
 });
 
-app.patch("/api/admin/orders/:orderId", requireAdmin, (req, res) => {
+app.patch("/api/admin/orders/:orderId", requireAdmin, async (req, res) => {
   const { status } = req.body;
   const validStatuses = ["pending", "paid", "processing", "shipped", "delivered", "cancelled"];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ error: "Invalid status" });
   }
 
-  const orders = readOrders();
-  const order = orders.find((o) => o.orderId === req.params.orderId);
-  if (!order) return res.status(404).json({ error: "Order not found" });
-
-  order.status = status;
-  order.updatedAt = new Date().toISOString();
-  writeOrders(orders);
-  res.json(order);
+  try {
+    const order = await updateOrderByOrderId(req.params.orderId, {
+      status,
+      updatedAt: new Date().toISOString(),
+    });
+    if (!order) return res.status(404).json({ error: "Order not found" });
+    res.json(order);
+  } catch (err) {
+    console.error("Admin update error:", err.message);
+    res.status(500).json({ error: "Could not update order" });
+  }
 });
 
-app.get("/api/admin/stats", requireAdmin, (req, res) => {
-  const orders = readOrders();
-  const paid = orders.filter((o) => o.status !== "pending" && o.status !== "cancelled");
-  res.json({
-    totalOrders: orders.length,
-    paidOrders: paid.length,
-    totalRevenue: paid.reduce((sum, o) => sum + o.total, 0),
-    pendingOrders: orders.filter((o) => o.status === "pending").length,
-  });
+app.get("/api/admin/stats", requireAdmin, async (req, res) => {
+  try {
+    const orders = await getOrders();
+    const paid = orders.filter((o) => o.status !== "pending" && o.status !== "cancelled");
+    res.json({
+      totalOrders: orders.length,
+      paidOrders: paid.length,
+      totalRevenue: paid.reduce((sum, o) => sum + o.total, 0),
+      pendingOrders: orders.filter((o) => o.status === "pending").length,
+    });
+  } catch (err) {
+    console.error("Admin stats error:", err.message);
+    res.status(500).json({ error: "Could not load stats" });
+  }
 });
 
 // ── Start (local dev only — Vercel uses module export below) ──
-ensureDataDir();
-
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`\n  RawTee Store running at http://localhost:${PORT}`);
-    console.log(`  Admin panel: http://localhost:${PORT}/admin.html`);
-    console.log(`  Payment gateway: SafePay (${safepayEnv})\n`);
+    console.log(`  Admin panel: http://localhost:${PORT}${ADMIN_PATH}`);
+    console.log(`  Payment gateway: SafePay (${safepayEnv})`);
+    console.log(`  Database: MongoDB (${process.env.MONGODB_DB_NAME || "rawtee"})\n`);
   });
 }
 
