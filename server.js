@@ -9,8 +9,17 @@ const nodemailer = require("nodemailer");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = path.join(__dirname, "data");
+const IS_VERCEL = Boolean(process.env.VERCEL);
+const DATA_DIR = IS_VERCEL
+  ? path.join("/tmp", "store-data")
+  : path.join(__dirname, "data");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
+
+function getStoreUrl() {
+  if (process.env.STORE_URL) return process.env.STORE_URL.replace(/\/$/, "");
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return `http://localhost:${PORT}`;
+}
 
 const safepayEnv = process.env.SAFEPAY_ENV || "sandbox";
 const safepayHost =
@@ -48,18 +57,31 @@ const PRODUCT = {
 
 // ── Helpers ──
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, "[]");
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, "[]");
+  } catch (err) {
+    console.error("Could not initialize order storage:", err.message);
+  }
 }
 
 function readOrders() {
-  ensureDataDir();
-  return JSON.parse(fs.readFileSync(ORDERS_FILE, "utf8"));
+  try {
+    ensureDataDir();
+    if (!fs.existsSync(ORDERS_FILE)) return [];
+    return JSON.parse(fs.readFileSync(ORDERS_FILE, "utf8"));
+  } catch {
+    return [];
+  }
 }
 
 function writeOrders(orders) {
-  ensureDataDir();
-  fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
+  try {
+    ensureDataDir();
+    fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
+  } catch (err) {
+    console.error("Could not save orders:", err.message);
+  }
 }
 
 function generateOrderId() {
@@ -206,7 +228,7 @@ app.post("/api/create-checkout-session", async (req, res) => {
 
   const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
   const orderId = generateOrderId();
-  const storeUrl = process.env.STORE_URL || `http://localhost:${PORT}`;
+  const storeUrl = getStoreUrl();
   const totalAmount = safepayAmount(PRODUCT.price * qty, PRODUCT.currency);
   const currency = PRODUCT.currency.toUpperCase();
 
@@ -302,7 +324,7 @@ async function verifySafepayPayment({ tracker, sig, orderId }) {
 }
 
 async function handleSafepayCallback(req, res) {
-  const storeUrl = process.env.STORE_URL || `http://localhost:${PORT}`;
+  const storeUrl = getStoreUrl();
   const data = { ...req.query, ...req.body };
 
   const tracker = data.tracker;
@@ -421,10 +443,15 @@ app.get("/api/admin/stats", requireAdmin, (req, res) => {
   });
 });
 
-// ── Start ──
+// ── Start (local dev only — Vercel uses module export below) ──
 ensureDataDir();
-app.listen(PORT, () => {
-  console.log(`\n  AuraSound Store running at http://localhost:${PORT}`);
-  console.log(`  Admin panel: http://localhost:${PORT}/admin.html`);
-  console.log(`  Payment gateway: SafePay (${safepayEnv})\n`);
-});
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n  AuraSound Store running at http://localhost:${PORT}`);
+    console.log(`  Admin panel: http://localhost:${PORT}/admin.html`);
+    console.log(`  Payment gateway: SafePay (${safepayEnv})\n`);
+  });
+}
+
+module.exports = app;
