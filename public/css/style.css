@@ -517,21 +517,26 @@ a:hover {
 }
 
 .stats-bar-inner {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .stat-pill {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  padding: 16px;
+  padding: 16px 24px;
   text-align: center;
   font-size: 0.85rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-family: var(--font-heading);
+  flex: 0 1 220px;
+  min-width: 160px;
+  max-width: 280px;
 }
 
 .stat-pill strong {
@@ -1302,7 +1307,12 @@ a:hover {
   }
 
   .stats-bar-inner {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-pill {
+    flex: 0 1 calc(50% - 10px);
+    max-width: none;
   }
 
   .spotlight-content {
