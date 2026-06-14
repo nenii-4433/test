@@ -1,21 +1,42 @@
 let product = null;
 
 const mainImage = document.getElementById("product-image");
-const thumbs = document.querySelectorAll(".gallery-thumb");
+const thumbsContainer = document.querySelector(".product-gallery-thumbs");
 
-thumbs.forEach((thumb) => {
-  thumb.addEventListener("click", () => {
-    const src = thumb.dataset.src;
-    mainImage.style.opacity = "0";
-    setTimeout(() => {
-      mainImage.src = src;
-      mainImage.style.opacity = "1";
-    }, 150);
+const labels = ["White front", "Black front", "White back", "Black back"];
 
-    thumbs.forEach((t) => t.classList.remove("active"));
-    thumb.classList.add("active");
+function setActiveThumb(thumb) {
+  document.querySelectorAll(".gallery-thumb").forEach((t) => t.classList.remove("active"));
+  thumb.classList.add("active");
+}
+
+function switchImage(src) {
+  mainImage.style.opacity = "0";
+  setTimeout(() => {
+    mainImage.src = src;
+    mainImage.style.opacity = "1";
+  }, 150);
+}
+
+function buildGallery(images) {
+  if (!thumbsContainer || !images?.length) return;
+
+  thumbsContainer.innerHTML = images
+    .map(
+      (src, i) => `
+    <button class="gallery-thumb${i === 0 ? " active" : ""}" data-src="${src}" aria-label="${labels[i] || "View " + (i + 1)}">
+      <img src="${src}" alt="${labels[i] || "Product view " + (i + 1)}">
+    </button>`
+    )
+    .join("");
+
+  thumbsContainer.querySelectorAll(".gallery-thumb").forEach((thumb) => {
+    thumb.addEventListener("click", () => {
+      switchImage(thumb.dataset.src);
+      setActiveThumb(thumb);
+    });
   });
-});
+}
 
 // FAQ accordion
 document.querySelectorAll(".faq-question").forEach((btn) => {
@@ -27,7 +48,6 @@ document.querySelectorAll(".faq-question").forEach((btn) => {
   });
 });
 
-// Load product config from server
 fetch("/api/config")
   .then((r) => r.json())
   .then((data) => {
@@ -35,10 +55,11 @@ fetch("/api/config")
     document.getElementById("product-name").textContent = product.name;
     document.getElementById("product-desc").textContent = product.description;
     document.getElementById("product-price").textContent = product.priceFormatted;
-    if (product.image) {
-      mainImage.src = product.image;
-      thumbs[0].querySelector("img").src = product.image;
-      thumbs[0].dataset.src = product.image;
+
+    const images = product.images?.length ? product.images : product.image ? [product.image] : [];
+    if (images.length) {
+      mainImage.src = images[0];
+      buildGallery(images);
     }
   })
   .catch(() => {});

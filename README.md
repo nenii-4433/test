@@ -1,4 +1,4 @@
-# AuraSound — Single Product Ecommerce Store
+# RawTee — Single Product Ecommerce Store
 
 A professional single-product ecommerce website built with HTML, CSS, and a lightweight Node.js backend. Includes SafePay payments, order confirmation emails, and an admin dashboard.
 
@@ -62,11 +62,11 @@ const PRODUCT = {
   description: "Your product description",
   price: 9999,        // smallest unit (9999 = $99.99 USD)
   currency: "usd",    // "usd" or "pkr"
-  image: "/images/product.svg",
+  image: "/images/MZCHYHAM2551-media-1.jpg",
 };
 ```
 
-Replace `/public/images/product.svg` with your own product image (PNG/JPG also work).
+Replace images in `/public/images/` with your own product photos.
 
 Update the HTML content in `public/index.html` (features, reviews, FAQ) to match your product.
 

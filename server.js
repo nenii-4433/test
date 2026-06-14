@@ -46,13 +46,19 @@ const safepayCore = process.env.SAFEPAY_SECRET_KEY
 
 // ── Product config (edit these to match your product) ──
 const PRODUCT = {
-  id: "premium-wireless-headphones",
-  name: "AuraSound Pro X1",
+  id: "rawtee-graphic-tee",
+  name: "RawTee Graphic Print Tee",
   description:
-    "Premium wireless headphones with active noise cancellation, 40-hour battery life, and studio-quality sound.",
-  price: 10, // whole units for PKR (10 = Rs. 10)
+    "Premium cotton graphic tee with bold artistic print. Available in classic white and black. Soft fabric, relaxed fit, and streetwear-ready style.",
+  price: 10,
   currency: "pkr",
-  image: "/images/product.svg",
+  image: "/images/MZCHYHAM2551-media-1.jpg",
+  images: [
+    "/images/MZCHYHAM2551-media-1.jpg",
+    "/images/MZCHYHAM2551-media-2.jpg",
+    "/images/MZCHYHAM2551-media-3.jpg",
+    "/images/MZCHYHAM2551-media-4.jpg",
+  ],
 };
 
 // ── Helpers ──
@@ -166,7 +172,7 @@ async function sendOrderConfirmation(order) {
           <p style="margin:0"><strong>Shipping to:</strong><br>${order.address}<br>${order.city}, ${order.state} ${order.zip}<br>${order.country}</p>
         </div>
         <p style="color:#64748b;font-size:14px">We'll send you a shipping update once your order is on its way.</p>
-        <p style="color:#94a3b8;font-size:12px;margin-top:32px">AuraSound Store</p>
+        <p style="color:#94a3b8;font-size:12px;margin-top:32px">RawTee Store</p>
       </div>
     `,
   });
@@ -448,7 +454,7 @@ ensureDataDir();
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`\n  AuraSound Store running at http://localhost:${PORT}`);
+    console.log(`\n  RawTee Store running at http://localhost:${PORT}`);
     console.log(`  Admin panel: http://localhost:${PORT}/admin.html`);
     console.log(`  Payment gateway: SafePay (${safepayEnv})\n`);
   });
