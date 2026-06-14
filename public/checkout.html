@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout — AuraSound</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">Aura<span>Sound</span></a>
+      <nav class="nav">
+        <a href="/">← Back to Product</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="checkout-page">
+    <div class="container checkout-grid">
+
+      <form class="checkout-form" id="checkout-form">
+        <h2 class="form-title">Shipping Information</h2>
+
+        <div id="alert-box"></div>
+
+        <div class="form-group">
+          <label for="name">Full Name *</label>
+          <input type="text" id="name" name="name" required placeholder="John Doe">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" required placeholder="john@example.com">
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000-0000">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="address">Street Address *</label>
+          <input type="text" id="address" name="address" required placeholder="123 Main Street">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="city">City *</label>
+            <input type="text" id="city" name="city" required placeholder="New York">
+          </div>
+          <div class="form-group">
+            <label for="state">State / Province *</label>
+            <input type="text" id="state" name="state" required placeholder="NY">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="zip">ZIP / Postal Code *</label>
+            <input type="text" id="zip" name="zip" required placeholder="10001">
+          </div>
+          <div class="form-group">
+            <label for="country">Country *</label>
+            <select id="country" name="country" required>
+              <option value="">Select country</option>
+              <option value="US" selected>United States</option>
+              <option value="CA">Canada</option>
+              <option value="GB">United Kingdom</option>
+              <option value="AU">Australia</option>
+              <option value="DE">Germany</option>
+              <option value="FR">France</option>
+              <option value="IN">India</option>
+              <option value="PK">Pakistan</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px" id="pay-btn">
+          Proceed to Payment
+        </button>
+        <p class="secure-note">🔒 Secured by SafePay — your card details are never stored on our servers</p>
+      </form>
+
+      <aside class="order-summary">
+        <h3 class="form-title">Order Summary</h3>
+        <div class="summary-product">
+          <img src="/images/product.svg" alt="Product" id="summary-image">
+          <div class="summary-product-info">
+            <h4 id="summary-name">AuraSound Pro X1</h4>
+            <p id="summary-qty">Qty: 1</p>
+          </div>
+        </div>
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span id="summary-subtotal">Rs. 10</span>
+        </div>
+        <div class="summary-row">
+          <span>Shipping</span>
+          <span style="color:var(--success)">Free</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span id="summary-total">Rs. 10</span>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <script src="/js/checkout.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmed — AuraSound</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">Aura<span>Sound</span></a>
+    </div>
+  </header>
+
+  <main class="success-page">
+    <div class="success-card" id="success-content">
+      <div class="success-icon">✓</div>
+      <h1>Order Confirmed!</h1>
+      <p>Thank you for your purchase. A confirmation email has been sent to your inbox.</p>
+      <div class="order-id-display" id="order-id">Loading...</div>
+      <p style="color:var(--text-dim);font-size:0.85rem">Keep this order ID for your records.</p>
+      <a href="/" class="btn btn-primary" style="margin-top:24px">Continue Shopping</a>
+    </div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("orderId");
+    const hasError = params.get("error");
+
+    const orderEl = document.getElementById("order-id");
+    const card = document.getElementById("success-content");
+
+    if (hasError) {
+      card.querySelector("h1").textContent = "Payment Verification Failed";
+      card.querySelector("p").textContent = "We could not verify your payment. Please contact support if you were charged.";
+      orderEl.textContent = "—";
+    } else if (orderId) {
+      fetch("/api/verify-order/" + encodeURIComponent(orderId))
+        .then(r => r.json())
+        .then(data => {
+          if (data.order) {
+            orderEl.textContent = data.order.orderId;
+            if (data.order.status !== "paid") {
+              card.querySelector("p").textContent = "Your payment is being processed. You will receive a confirmation email shortly.";
+            }
+          } else {
+            orderEl.textContent = orderId;
+          }
+        })
+        .catch(() => {
+          orderEl.textContent = orderId;
+        });
+    } else {
+      orderEl.textContent = "—";
+    }
+  </script>
+</body>
+</html>

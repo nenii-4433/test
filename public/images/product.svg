@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="400">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#222240"/>
+    </linearGradient>
+    <linearGradient id="headband" x1="80" y1="80" x2="320" y2="200">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="cup" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2d2d4a"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)" rx="20"/>
+  <!-- Glow -->
+  <ellipse cx="200" cy="220" rx="120" ry="80" fill="#6366f1" opacity="0.08" filter="url(#glow)"/>
+  <!-- Headband -->
+  <path d="M 90 180 Q 90 60 200 60 Q 310 60 310 180" stroke="url(#headband)" stroke-width="18" fill="none" stroke-linecap="round"/>
+  <!-- Left ear cup -->
+  <rect x="60" y="170" width="80" height="110" rx="20" fill="url(#cup)" stroke="#6366f1" stroke-width="2"/>
+  <rect x="72" y="185" width="56" height="80" rx="12" fill="#6366f1" opacity="0.2"/>
+  <circle cx="100" cy="225" r="22" fill="#6366f1" opacity="0.35"/>
+  <!-- Right ear cup -->
+  <rect x="260" y="170" width="80" height="110" rx="20" fill="url(#cup)" stroke="#6366f1" stroke-width="2"/>
+  <rect x="272" y="185" width="56" height="80" rx="12" fill="#6366f1" opacity="0.2"/>
+  <circle cx="300" cy="225" r="22" fill="#6366f1" opacity="0.35"/>
+  <!-- Accent line -->
+  <line x1="130" y1="225" x2="270" y2="225" stroke="#818cf8" stroke-width="1.5" opacity="0.4" stroke-dasharray="4 6"/>
+  <!-- Brand dot -->
+  <circle cx="200" cy="72" r="6" fill="#818cf8"/>
+</svg>

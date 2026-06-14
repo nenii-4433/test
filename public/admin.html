@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — AuraSound</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">Aura<span>Sound</span> Admin</a>
+      <nav class="nav">
+        <a href="/">← Store</a>
+        <button class="btn btn-outline btn-sm" id="logout-btn" style="display:none">Logout</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-page">
+    <div class="container">
+
+      <!-- Login -->
+      <div class="login-card" id="login-section">
+        <h1>Admin Login</h1>
+        <p>Enter your password to access the order dashboard.</p>
+        <div id="login-error"></div>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required placeholder="Enter admin password">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Login</button>
+        </form>
+      </div>
+
+      <!-- Dashboard -->
+      <div id="dashboard-section" style="display:none">
+        <div class="admin-header">
+          <h1>Order Dashboard</h1>
+          <button class="btn btn-outline btn-sm" id="refresh-btn">Refresh</button>
+        </div>
+
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <p class="stat-label">Total Orders</p>
+            <p class="stat-value" id="stat-total">—</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-label">Paid Orders</p>
+            <p class="stat-value" id="stat-paid">—</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-label">Revenue</p>
+            <p class="stat-value" id="stat-revenue">—</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-label">Pending</p>
+            <p class="stat-value" id="stat-pending">—</p>
+          </div>
+        </div>
+
+        <div class="orders-table-wrap">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="orders-body">
+              <tr><td colspan="8" class="empty-state">Loading orders...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

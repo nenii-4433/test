@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="400" y2="400">
+      <stop offset="0%" stop-color="#16162a"/>
+      <stop offset="100%" stop-color="#1e1e38"/>
+    </linearGradient>
+    <linearGradient id="band2" x1="80" y1="80" x2="320" y2="200">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg2)" rx="20"/>
+  <ellipse cx="200" cy="230" rx="100" ry="60" fill="#6366f1" opacity="0.1"/>
+  <!-- Side view headband -->
+  <path d="M 120 160 Q 120 70 200 70 Q 280 70 280 160" stroke="url(#band2)" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <!-- Single ear cup (side angle) -->
+  <ellipse cx="130" cy="210" rx="55" ry="65" fill="#2d2d4a" stroke="#818cf8" stroke-width="2"/>
+  <ellipse cx="130" cy="210" rx="35" ry="42" fill="#6366f1" opacity="0.25"/>
+  <ellipse cx="270" cy="195" rx="30" ry="35" fill="#2d2d4a" stroke="#6366f1" stroke-width="1.5" opacity="0.6"/>
+  <text x="200" y="340" text-anchor="middle" fill="#64748b" font-family="Inter,sans-serif" font-size="13" letter-spacing="3">SIDE VIEW</text>
+</svg>
