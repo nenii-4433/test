@@ -1,42 +1,21 @@
-let product = null;
-
 const mainImage = document.getElementById("product-image");
-const thumbsContainer = document.querySelector(".product-gallery-thumbs");
+const thumbs = document.querySelectorAll(".gallery-thumb");
 
-const labels = ["White front", "Black front", "White back", "Black back"];
+thumbs.forEach((thumb) => {
+  thumb.addEventListener("click", () => {
+    const src = thumb.dataset.src;
+    if (!src || !mainImage) return;
 
-function setActiveThumb(thumb) {
-  document.querySelectorAll(".gallery-thumb").forEach((t) => t.classList.remove("active"));
-  thumb.classList.add("active");
-}
+    mainImage.style.opacity = "0";
+    setTimeout(() => {
+      mainImage.src = src;
+      mainImage.style.opacity = "1";
+    }, 150);
 
-function switchImage(src) {
-  mainImage.style.opacity = "0";
-  setTimeout(() => {
-    mainImage.src = src;
-    mainImage.style.opacity = "1";
-  }, 150);
-}
-
-function buildGallery(images) {
-  if (!thumbsContainer || !images?.length) return;
-
-  thumbsContainer.innerHTML = images
-    .map(
-      (src, i) => `
-    <button class="gallery-thumb${i === 0 ? " active" : ""}" data-src="${src}" aria-label="${labels[i] || "View " + (i + 1)}">
-      <img src="${src}" alt="${labels[i] || "Product view " + (i + 1)}">
-    </button>`
-    )
-    .join("");
-
-  thumbsContainer.querySelectorAll(".gallery-thumb").forEach((thumb) => {
-    thumb.addEventListener("click", () => {
-      switchImage(thumb.dataset.src);
-      setActiveThumb(thumb);
-    });
+    thumbs.forEach((t) => t.classList.remove("active"));
+    thumb.classList.add("active");
   });
-}
+});
 
 // FAQ accordion
 document.querySelectorAll(".faq-question").forEach((btn) => {
@@ -48,18 +27,19 @@ document.querySelectorAll(".faq-question").forEach((btn) => {
   });
 });
 
+// Load product text & price from server (images stay in HTML)
 fetch("/api/config")
   .then((r) => r.json())
   .then((data) => {
-    product = data.product;
-    document.getElementById("product-name").textContent = product.name;
-    document.getElementById("product-desc").textContent = product.description;
-    document.getElementById("product-price").textContent = product.priceFormatted;
+    const product = data.product;
+    if (!product) return;
 
-    const images = product.images?.length ? product.images : product.image ? [product.image] : [];
-    if (images.length) {
-      mainImage.src = images[0];
-      buildGallery(images);
-    }
+    const nameEl = document.getElementById("product-name");
+    const descEl = document.getElementById("product-desc");
+    const priceEl = document.getElementById("product-price");
+
+    if (nameEl && product.name) nameEl.textContent = product.name;
+    if (descEl && product.description) descEl.textContent = product.description;
+    if (priceEl && product.priceFormatted) priceEl.textContent = product.priceFormatted;
   })
   .catch(() => {});
