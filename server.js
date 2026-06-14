@@ -52,6 +52,12 @@ const PRICING = {
 
 const SHIPPING_COST = 200;
 
+const SIZES = ["S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"];
+
+function isValidSize(size) {
+  return SIZES.includes(size);
+}
+
 function getShirtType(shirtName) {
   if (!shirtName) return "printed";
   return shirtName.toLowerCase().includes("plain") ? "plain" : "printed";
@@ -187,6 +193,7 @@ async function sendOrderConfirmation(order) {
         <div style="background:#f8fafc;border-radius:12px;padding:24px;margin:24px 0">
           <p style="margin:0 0 8px"><strong>Order ID:</strong> ${order.orderId}</p>
           <p style="margin:0 0 8px"><strong>Product:</strong> ${order.productName}</p>
+          <p style="margin:0 0 8px"><strong>Size:</strong> ${order.size || "—"}</p>
           <p style="margin:0 0 8px"><strong>Quantity:</strong> ${order.quantity}</p>
           <p style="margin:0 0 8px"><strong>Total:</strong> ${total}</p>
           <p style="margin:0"><strong>Shipping to:</strong><br>${order.address}<br>${order.city}, ${order.state} ${order.zip}<br>${order.country}</p>
@@ -204,7 +211,7 @@ async function sendOrderConfirmation(order) {
       subject: `New Order — ${order.orderId}`,
       html: `
         <h2>New order received</h2>
-        <p><strong>${order.name}</strong> (${order.email}) ordered ${order.quantity}x ${order.productName}</p>
+        <p><strong>${order.name}</strong> (${order.email}) ordered ${order.quantity}x ${order.productName} — Size ${order.size || "—"}</p>
         <p>Total: ${total}</p>
         <p>Address: ${order.address}, ${order.city}, ${order.state}, ${order.zip}, ${order.country}</p>
         <p>Phone: ${order.phone || "N/A"}</p>
@@ -259,6 +266,7 @@ app.get("/api/config", (req, res) => {
       pricing: PRICING,
       shipping: SHIPPING_COST,
       shippingFormatted: formatPrice(SHIPPING_COST, PRODUCT.currency),
+      sizes: SIZES,
     },
   });
 });
@@ -268,10 +276,14 @@ app.post("/api/create-checkout-session", async (req, res) => {
     return res.status(500).json({ error: "SafePay is not configured. Add SAFEPAY keys to .env" });
   }
 
-  const { name, email, phone, address, city, state, zip, country, quantity = 1, shirtName } = req.body;
+  const { name, email, phone, address, city, state, zip, country, quantity = 1, shirtName, size } = req.body;
 
   if (!name || !email || !address || !city || !state || !zip || !country) {
     return res.status(400).json({ error: "Please fill in all required fields." });
+  }
+
+  if (!size || !isValidSize(size)) {
+    return res.status(400).json({ error: "Please select a valid size." });
   }
 
   const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
@@ -311,6 +323,7 @@ app.post("/api/create-checkout-session", async (req, res) => {
       zip,
       country,
       quantity: qty,
+      size,
       productName: shirtName || PRODUCT.name,
       unitPrice,
       compareAt: shirtPricing.compareAt,

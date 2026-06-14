@@ -66,7 +66,7 @@ async function loadOrders() {
   const tbody = document.getElementById("orders-body");
 
   if (orders.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No orders yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No orders yet.</td></tr>';
     return;
   }
 
@@ -81,6 +81,7 @@ async function loadOrders() {
         <span style="color:var(--text-dim);font-size:0.75rem">${o.address}, ${o.city}</span>
       </td>
       <td>${o.productName}</td>
+      <td>${o.size || "—"}</td>
       <td>${o.quantity}</td>
       <td>${formatPrice(o.total, o.currency)}</td>
       <td>${statusBadge(o.status)}</td>

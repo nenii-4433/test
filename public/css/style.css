@@ -465,6 +465,52 @@ a:hover {
   border: 1px solid rgba(255, 77, 0, 0.3);
 }
 
+/* ── Size picker ── */
+.size-picker {
+  margin-bottom: 28px;
+  width: 100%;
+}
+
+.size-picker-label {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.size-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.size-option {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 12px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.size-option:hover {
+  border-color: rgba(255, 77, 0, 0.5);
+}
+
+.size-option.active {
+  background: rgba(255, 77, 0, 0.12);
+  border-color: var(--primary);
+  color: var(--primary-light);
+}
+
 /* ── Stats bar ── */
 .stats-bar {
   padding: 0 0 48px;
@@ -966,6 +1012,14 @@ a:hover {
   color: var(--text-muted);
 }
 
+#summary-size {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary-light);
+}
+
 .summary-row {
   display: flex;
   justify-content: space-between;
@@ -1284,6 +1338,10 @@ a:hover {
 
   .product-title {
     font-size: 2.5rem;
+  }
+
+  .size-options {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .section-title {

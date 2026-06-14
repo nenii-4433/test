@@ -7,6 +7,7 @@ const compareEl = document.getElementById("product-price-compare");
 const discountEl = document.getElementById("price-discount");
 const buyBtn = document.getElementById("buy-btn");
 const thumbs = document.querySelectorAll(".gallery-thumb");
+const sizeOptions = document.querySelectorAll(".size-option");
 
 function formatPrice(amount) {
   return new Intl.NumberFormat("en-PK", { style: "currency", currency: "PKR" }).format(amount);
@@ -27,6 +28,18 @@ function saveSelection(name, src, desc, price, compareAt) {
   if (desc) sessionStorage.setItem("selectedDesc", desc);
   if (price) sessionStorage.setItem("selectedPrice", price);
   if (compareAt) sessionStorage.setItem("selectedCompareAt", compareAt);
+}
+
+function saveSize(size) {
+  if (size) sessionStorage.setItem("selectedSize", size);
+}
+
+function selectSize(btn) {
+  const size = btn.dataset.size;
+  if (!size) return;
+  sizeOptions.forEach((b) => b.classList.remove("active"));
+  btn.classList.add("active");
+  saveSize(size);
 }
 
 function selectShirt(thumb) {
@@ -58,8 +71,19 @@ thumbs.forEach((thumb) => {
   thumb.addEventListener("click", () => selectShirt(thumb));
 });
 
+sizeOptions.forEach((btn) => {
+  btn.addEventListener("click", () => selectSize(btn));
+});
+
 if (buyBtn) {
-  buyBtn.addEventListener("click", () => {
+  buyBtn.addEventListener("click", (e) => {
+    const activeSize = document.querySelector(".size-option.active");
+    if (!activeSize) {
+      e.preventDefault();
+      alert("Pick your size before copping.");
+      return;
+    }
+
     const active = document.querySelector(".gallery-thumb.active");
     if (active) {
       saveSelection(
@@ -70,6 +94,7 @@ if (buyBtn) {
         active.dataset.compare
       );
     }
+    saveSize(activeSize.dataset.size);
   });
 }
 
@@ -104,10 +129,16 @@ fetch("/api/config")
   })
   .catch(() => {});
 
-// Restore last selected shirt if returning to page
+// Restore last selected shirt & size
 const savedName = sessionStorage.getItem("selectedShirt");
 const savedImage = sessionStorage.getItem("selectedImage");
 if (savedName && savedImage) {
   const match = [...thumbs].find((t) => t.dataset.src === savedImage);
   if (match) selectShirt(match);
+}
+
+const savedSize = sessionStorage.getItem("selectedSize");
+if (savedSize) {
+  const sizeBtn = [...sizeOptions].find((b) => b.dataset.size === savedSize);
+  if (sizeBtn) selectSize(sizeBtn);
 }

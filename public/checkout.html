@@ -61,23 +61,40 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="zip">ZIP / Postal Code *</label>
-            <input type="text" id="zip" name="zip" required placeholder="10001">
+            <label for="size">Size *</label>
+            <select id="size" name="size" required>
+              <option value="">Select size</option>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="2XL">2XL</option>
+              <option value="3XL">3XL</option>
+              <option value="4XL">4XL</option>
+              <option value="5XL">5XL</option>
+            </select>
           </div>
           <div class="form-group">
             <label for="country">Country *</label>
             <select id="country" name="country" required>
               <option value="">Select country</option>
-              <option value="US" selected>United States</option>
+              <option value="US">United States</option>
               <option value="CA">Canada</option>
               <option value="GB">United Kingdom</option>
               <option value="AU">Australia</option>
               <option value="DE">Germany</option>
               <option value="FR">France</option>
               <option value="IN">India</option>
-              <option value="PK">Pakistan</option>
+              <option value="PK" selected>Pakistan</option>
               <option value="OTHER">Other</option>
             </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="zip">ZIP / Postal Code *</label>
+            <input type="text" id="zip" name="zip" required placeholder="54000">
           </div>
         </div>
 
@@ -93,6 +110,7 @@
           <img src="/images/MZCHYHAM2551-media-1.jpg" alt="Product" id="summary-image">
           <div class="summary-product-info">
             <h4 id="summary-name">RawTee Nike Print Shirt White</h4>
+            <p id="summary-size">Size: —</p>
             <p id="summary-qty">Qty: 1</p>
           </div>
         </div>

@@ -5,6 +5,7 @@ let shippingCost = 200;
 const form = document.getElementById("checkout-form");
 const payBtn = document.getElementById("pay-btn");
 const alertBox = document.getElementById("alert-box");
+const sizeSelect = document.getElementById("size");
 
 function showAlert(message, type = "error") {
   alertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
@@ -22,6 +23,10 @@ function getSelectedShirtName() {
 
 function getSelectedImage() {
   return sessionStorage.getItem("selectedImage") || "/images/MZCHYHAM2551-media-1.jpg";
+}
+
+function getSelectedSize() {
+  return sizeSelect?.value || sessionStorage.getItem("selectedSize") || "";
 }
 
 function getSelectedPricing() {
@@ -47,8 +52,10 @@ function updateSummary() {
   const subtotal = price * quantity;
   const compareTotal = compareAt * quantity;
   const total = subtotal + shippingCost;
+  const size = getSelectedSize();
 
   document.getElementById("summary-name").textContent = getSelectedShirtName();
+  document.getElementById("summary-size").textContent = size ? `Size: ${size}` : "Size: —";
   document.getElementById("summary-qty").textContent = "Qty: " + quantity;
   document.getElementById("summary-subtotal").textContent = formatPrice(subtotal, product.currency);
   document.getElementById("summary-shipping").textContent = formatPrice(shippingCost, product.currency);
@@ -69,6 +76,18 @@ if (new URLSearchParams(window.location.search).get("cancelled")) {
   showAlert("Payment was cancelled. You can try again when ready.", "info");
 }
 
+const savedSize = sessionStorage.getItem("selectedSize");
+if (savedSize && sizeSelect) {
+  sizeSelect.value = savedSize;
+}
+
+if (sizeSelect) {
+  sizeSelect.addEventListener("change", () => {
+    sessionStorage.setItem("selectedSize", sizeSelect.value);
+    updateSummary();
+  });
+}
+
 fetch("/api/config")
   .then((r) => r.json())
   .then((data) => {
@@ -79,6 +98,13 @@ fetch("/api/config")
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  const size = getSelectedSize();
+  if (!size) {
+    showAlert("Please select your size.");
+    return;
+  }
+
   payBtn.disabled = true;
   payBtn.textContent = "Redirecting to payment...";
   alertBox.innerHTML = "";
@@ -94,6 +120,7 @@ form.addEventListener("submit", async (e) => {
     country: document.getElementById("country").value,
     quantity,
     shirtName: getSelectedShirtName(),
+    size,
   };
 
   try {
