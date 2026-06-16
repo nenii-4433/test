@@ -544,7 +544,7 @@ app.post("/api/create-checkout-session", checkoutRateLimit, async (req, res) => 
       } catch (e) {
         console.error("Email error:", e.message);
       }
-      return res.json({ successUrl: `${storeUrl}/success.html?orderId=${encodeURIComponent(orderId)}` });
+      return res.json({ successUrl: `/success.html?orderId=${encodeURIComponent(orderId)}` });
     } catch (err) {
       console.error("COD order error:", err.response?.data || err.message);
       if (err.message?.includes("MONGODB_URI")) {
