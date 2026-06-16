@@ -6,6 +6,7 @@ const form = document.getElementById("checkout-form");
 const payBtn = document.getElementById("pay-btn");
 const alertBox = document.getElementById("alert-box");
 const sizeSelect = document.getElementById("size");
+const paymentMethodSelect = document.getElementById("paymentMethod");
 
 function showAlert(message, type = "error") {
   alertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
@@ -123,6 +124,15 @@ if (sizeSelect) {
   });
 }
 
+if (paymentMethodSelect && payBtn) {
+  const syncPayButtonLabel = () => {
+    const isCod = paymentMethodSelect.value === "cod";
+    payBtn.textContent = isCod ? "Place COD order" : "Complete order";
+  };
+  paymentMethodSelect.addEventListener("change", syncPayButtonLabel);
+  syncPayButtonLabel();
+}
+
 fetchStoreConfig()
   .then((data) => {
     product = data.product;
@@ -141,18 +151,19 @@ form.addEventListener("submit", async (e) => {
   }
 
   payBtn.disabled = true;
-  payBtn.textContent = "Redirecting to payment...";
+  const paymentMethod = paymentMethodSelect?.value || "online";
+  payBtn.textContent = paymentMethod === "cod" ? "Placing COD order..." : "Redirecting to payment...";
   alertBox.innerHTML = "";
 
   const payload = {
     name: document.getElementById("name").value.trim(),
     email: document.getElementById("email").value.trim(),
     phone: document.getElementById("phone").value.trim(),
+    alternatePhone: document.getElementById("alternatePhone")?.value.trim() || "",
     address: document.getElementById("address").value.trim(),
-    city: document.getElementById("city").value.trim(),
-    state: document.getElementById("state").value.trim(),
-    zip: document.getElementById("zip").value.trim(),
-    country: document.getElementById("country").value,
+    city: document.getElementById("city").value,
+    areaSector: document.getElementById("areaSector").value.trim(),
+    paymentMethod,
     quantity,
     shirtName: getSelectedProductName(),
     size,
@@ -169,14 +180,24 @@ form.addEventListener("submit", async (e) => {
     if (!res.ok) {
       showAlert(data.error || "Something went wrong. Please try again.");
       payBtn.disabled = false;
-      payBtn.textContent = "Complete order";
+      payBtn.textContent = paymentMethod === "cod" ? "Place COD order" : "Complete order";
       return;
     }
 
-    window.location.href = data.url;
+    if (data.url) {
+      window.location.href = data.url;
+      return;
+    }
+
+    if (data.successUrl) {
+      window.location.href = data.successUrl;
+      return;
+    }
+
+    window.location.href = "/success.html";
   } catch {
     showAlert("Network error. Please check your connection and try again.");
     payBtn.disabled = false;
-    payBtn.textContent = "Complete order";
+    payBtn.textContent = paymentMethod === "cod" ? "Place COD order" : "Complete order";
   }
 });

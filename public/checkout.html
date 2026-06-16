@@ -27,36 +27,53 @@
 
         <div id="alert-box"></div>
 
+        <h3 class="section-title" style="font-size:1rem;margin:0 0 12px">Contact details</h3>
         <div class="form-group">
-          <label for="name">Full Name *</label>
-          <input type="text" id="name" name="name" required placeholder="John Doe">
+          <label for="name">Customer name *</label>
+          <input type="text" id="name" name="name" required placeholder="Enter customer name">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address *</label>
+          <input type="email" id="email" name="email" required placeholder="customer@example.com">
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="email">Email Address *</label>
-            <input type="email" id="email" name="email" required placeholder="john@example.com">
+            <label for="phone">+923363301661 / phone *</label>
+            <input type="tel" id="phone" name="phone" required placeholder="+92XXXXXXXXXX">
           </div>
           <div class="form-group">
-            <label for="phone">Phone Number</label>
-            <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000-0000">
+            <label for="alternatePhone">Alternate phone (optional)</label>
+            <input type="tel" id="alternatePhone" name="alternatePhone" placeholder="+92XXXXXXXXXX">
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="address">Street Address *</label>
-          <input type="text" id="address" name="address" required placeholder="123 Main Street">
-        </div>
-
+        <h3 class="section-title" style="font-size:1rem;margin:8px 0 12px">Address details</h3>
         <div class="form-row">
           <div class="form-group">
             <label for="city">City *</label>
-            <input type="text" id="city" name="city" required placeholder="New York">
+            <select id="city" name="city" required>
+              <option value="">Select city</option>
+              <option value="Islamabad">Islamabad</option>
+              <option value="Rawalpindi">Rawalpindi</option>
+              <option value="Lahore">Lahore</option>
+              <option value="Karachi">Karachi</option>
+              <option value="Peshawar">Peshawar</option>
+              <option value="Faisalabad">Faisalabad</option>
+              <option value="Multan">Multan</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
           <div class="form-group">
-            <label for="state">State / Province *</label>
-            <input type="text" id="state" name="state" required placeholder="NY">
+            <label for="areaSector">Area / Sector *</label>
+            <input type="text" id="areaSector" name="areaSector" required placeholder="First select a city">
           </div>
+        </div>
+
+        <div class="form-group">
+          <label for="address">Full address *</label>
+          <input type="text" id="address" name="address" required placeholder="House no, street, block, landmark">
         </div>
 
         <div class="form-row">
@@ -75,26 +92,11 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="country">Country *</label>
-            <select id="country" name="country" required>
-              <option value="">Select country</option>
-              <option value="US">United States</option>
-              <option value="CA">Canada</option>
-              <option value="GB">United Kingdom</option>
-              <option value="AU">Australia</option>
-              <option value="DE">Germany</option>
-              <option value="FR">France</option>
-              <option value="IN">India</option>
-              <option value="PK" selected>Pakistan</option>
-              <option value="OTHER">Other</option>
+            <label for="paymentMethod">Payment method *</label>
+            <select id="paymentMethod" name="paymentMethod" required>
+              <option value="online" selected>Online payment (SafePay)</option>
+              <option value="cod">Cash on Delivery (COD)</option>
             </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="zip">ZIP / Postal Code *</label>
-            <input type="text" id="zip" name="zip" required placeholder="54000">
           </div>
         </div>
 

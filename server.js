@@ -268,10 +268,10 @@ async function markOrderPaid(order, paymentMeta = {}) {
   let updated = await updateOrderByOrderId(order.orderId, patch);
   if (!updated) return order;
 
-  if (!updated.emailSent) {
+  if (!updated.paymentEmailSent) {
     try {
-      await sendOrderConfirmation(updated);
-      updated = await updateOrderByOrderId(order.orderId, { emailSent: true });
+      await sendOrderReceipt(updated, "paid");
+      updated = await updateOrderByOrderId(order.orderId, { paymentEmailSent: true });
     } catch (e) {
       console.error("Email error:", e.message);
     }
@@ -280,7 +280,7 @@ async function markOrderPaid(order, paymentMeta = {}) {
   return updated;
 }
 
-async function sendOrderConfirmation(order) {
+async function sendOrderReceipt(order, mode = "placed") {
   const transporter = createMailer();
   if (!transporter) {
     console.warn("Email not configured — skipping confirmation email.");
@@ -289,22 +289,35 @@ async function sendOrderConfirmation(order) {
 
   const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
   const total = formatPrice(order.total, order.currency);
+  const paymentLabel =
+    order.paymentMethod === "cod"
+      ? "Cash on Delivery (COD)"
+      : mode === "paid"
+      ? "Paid online"
+      : "Online payment pending";
+  const heading =
+    mode === "paid" ? "Payment received!" : "Order placed successfully!";
+  const message =
+    mode === "paid"
+      ? `Hi ${order.name}, we have received your payment.`
+      : `Hi ${order.name}, your order has been received.`;
 
   await transporter.sendMail({
     from,
     to: order.email,
-    subject: `Order Confirmed — ${order.orderId}`,
+    subject: `Order Receipt — ${order.orderId}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e">
-        <h1 style="color:#6366f1;margin-bottom:4px">Thank you for your order!</h1>
-        <p style="color:#64748b">Hi ${order.name}, your payment was successful.</p>
+        <h1 style="color:#6366f1;margin-bottom:4px">${heading}</h1>
+        <p style="color:#64748b">${message}</p>
         <div style="background:#f8fafc;border-radius:12px;padding:24px;margin:24px 0">
           <p style="margin:0 0 8px"><strong>Order ID:</strong> ${order.orderId}</p>
           <p style="margin:0 0 8px"><strong>Product:</strong> ${order.productName}</p>
           <p style="margin:0 0 8px"><strong>Size:</strong> ${order.size || "—"}</p>
           <p style="margin:0 0 8px"><strong>Quantity:</strong> ${order.quantity}</p>
+          <p style="margin:0 0 8px"><strong>Payment method:</strong> ${paymentLabel}</p>
           <p style="margin:0 0 8px"><strong>Total:</strong> ${total}</p>
-          <p style="margin:0"><strong>Shipping to:</strong><br>${order.address}<br>${order.city}, ${order.state} ${order.zip}<br>${order.country}</p>
+          <p style="margin:0"><strong>Shipping to:</strong><br>${order.address}<br>${order.areaSector || ""}<br>${order.city}, Pakistan</p>
         </div>
         <p style="color:#64748b;font-size:14px">We'll send you a shipping update once your order is on its way.</p>
         <p style="color:#94a3b8;font-size:12px;margin-top:32px">RawTee Store</p>
@@ -320,9 +333,11 @@ async function sendOrderConfirmation(order) {
       html: `
         <h2>New order received</h2>
         <p><strong>${order.name}</strong> (${order.email}) ordered ${order.quantity}x ${order.productName} — Size ${order.size || "—"}</p>
+        <p>Payment: ${paymentLabel}</p>
         <p>Total: ${total}</p>
-        <p>Address: ${order.address}, ${order.city}, ${order.state}, ${order.zip}, ${order.country}</p>
+        <p>Address: ${order.address}, ${order.areaSector || ""}, ${order.city}, Pakistan</p>
         <p>Phone: ${order.phone || "N/A"}</p>
+        <p>Alternate Phone: ${order.alternatePhone || "N/A"}</p>
       `,
     });
   }
@@ -464,9 +479,21 @@ app.post("/api/create-checkout-session", checkoutRateLimit, async (req, res) => 
     return res.status(500).json({ error: "SafePay is not configured. Add SAFEPAY keys to .env" });
   }
 
-  const { name, email, phone, address, city, state, zip, country, quantity = 1, shirtName, size } = req.body;
+  const {
+    name,
+    email,
+    phone,
+    alternatePhone,
+    address,
+    city,
+    areaSector,
+    quantity = 1,
+    shirtName,
+    size,
+    paymentMethod = "online",
+  } = req.body;
 
-  if (!name || !email || !address || !city || !state || !zip || !country) {
+  if (!name || !email || !phone || !address || !city || !areaSector) {
     return res.status(400).json({ error: "Please fill in all required fields." });
   }
 
@@ -480,6 +507,53 @@ app.post("/api/create-checkout-session", checkoutRateLimit, async (req, res) => 
   const itemPricing = getOrderPricing(shirtName || PRODUCT.name);
   const unitPrice = itemPricing.price;
   const subtotal = unitPrice * qty;
+  const orderBase = {
+    orderId,
+    status: paymentMethod === "cod" ? "processing" : "pending",
+    name,
+    email,
+    phone: phone || "",
+    alternatePhone: alternatePhone || "",
+    address,
+    city,
+    areaSector,
+    country: "PK",
+    quantity: qty,
+    size,
+    productName: shirtName || PRODUCT.name,
+    paymentMethod,
+    unitPrice,
+    compareAt: itemPricing.compareAt,
+    shipping: SHIPPING_COST,
+    subtotal,
+    total: subtotal + SHIPPING_COST,
+    currency: PRODUCT.currency,
+    createdAt: new Date().toISOString(),
+  };
+
+  if (paymentMethod === "cod") {
+    try {
+      const codOrder = {
+        ...orderBase,
+        tracker: `COD-${orderId}`,
+      };
+      await createOrder(codOrder);
+      try {
+        await sendOrderReceipt(codOrder, "placed");
+        await updateOrderByOrderId(orderId, { emailSent: true });
+      } catch (e) {
+        console.error("Email error:", e.message);
+      }
+      return res.json({ successUrl: `${storeUrl}/success.html?orderId=${encodeURIComponent(orderId)}` });
+    } catch (err) {
+      console.error("COD order error:", err.response?.data || err.message);
+      if (err.message?.includes("MONGODB_URI")) {
+        return res.status(500).json({ error: "Order storage is not configured." });
+      }
+      return res.status(500).json({ error: "Could not place COD order. Please try again." });
+    }
+  }
+
   const totalAmount = safepayAmount(subtotal + SHIPPING_COST, PRODUCT.currency);
   const currency = PRODUCT.currency.toUpperCase();
 
@@ -499,29 +573,16 @@ app.post("/api/create-checkout-session", checkoutRateLimit, async (req, res) => 
     });
 
     const order = {
-      orderId,
+      ...orderBase,
       tracker: payment.token,
-      status: "pending",
-      name,
-      email,
-      phone: phone || "",
-      address,
-      city,
-      state,
-      zip,
-      country,
-      quantity: qty,
-      size,
-      productName: shirtName || PRODUCT.name,
-      unitPrice,
-      compareAt: itemPricing.compareAt,
-      shipping: SHIPPING_COST,
-      subtotal,
-      total: subtotal + SHIPPING_COST,
-      currency: PRODUCT.currency,
-      createdAt: new Date().toISOString(),
     };
     await createOrder(order);
+    try {
+      await sendOrderReceipt(order, "placed");
+      await updateOrderByOrderId(orderId, { emailSent: true });
+    } catch (e) {
+      console.error("Email error:", e.message);
+    }
 
     res.json({ url: checkoutUrl });
   } catch (err) {

@@ -51,7 +51,9 @@
         .then(data => {
           if (data.order) {
             orderEl.textContent = data.order.orderId;
-            if (data.order.status !== "paid") {
+            if (data.order.paymentMethod === "cod") {
+              card.querySelector("p").textContent = "Your COD order is confirmed. We will contact you shortly for delivery.";
+            } else if (data.order.status !== "paid") {
               card.querySelector("p").textContent = "Your payment is being processed. You will receive a confirmation email shortly.";
             }
           } else {
