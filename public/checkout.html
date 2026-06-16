@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout — RawTee</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div class="container checkout-grid">
 
       <form class="checkout-form" id="checkout-form">
-        <h2 class="form-title">Lock In Your Fit</h2>
+        <h2 class="form-title">Checkout</h2>
 
         <div id="alert-box"></div>
 
@@ -98,10 +98,10 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg btn-glow" style="width:100%;margin-top:8px" id="pay-btn">
-          Secure the Fit →
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px" id="pay-btn">
+          Complete order
         </button>
-        <p class="secure-note">🔒 SafePay secured — your card details never touch our servers</p>
+        <p class="secure-note">Secure checkout powered by SafePay</p>
       </form>
 
       <aside class="order-summary">
@@ -139,6 +139,19 @@
     </div>
   </main>
 
+  <footer class="footer footer-compact">
+    <div class="container footer-bottom">
+      <p>&copy; 2026 RawTee · G-11 &amp; G-9, Islamabad · <a href="tel:+923363301661">0336 3301661</a></p>
+      <div class="footer-links">
+        <a href="/policies.html#privacy">Privacy</a>
+        <a href="/policies.html#returns">Returns</a>
+        <a href="/policies.html#shipping">Shipping</a>
+        <a href="/policies.html#terms">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/store-config.js"></script>
   <script src="/js/checkout.js"></script>
 </body>
 </html>

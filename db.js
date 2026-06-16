@@ -5,6 +5,7 @@ const ORDERS_COLLECTION = "orders";
 
 let client;
 let dbPromise;
+let indexesReady = false;
 
 function getDb() {
   if (!process.env.MONGODB_URI) {
@@ -12,7 +13,12 @@ function getDb() {
   }
 
   if (!dbPromise) {
-    client = new MongoClient(process.env.MONGODB_URI);
+    client = new MongoClient(process.env.MONGODB_URI, {
+      maxPoolSize: 10,
+      minPoolSize: 0,
+      maxIdleTimeMS: 10000,
+      serverSelectionTimeoutMS: 5000,
+    });
     dbPromise = client
       .connect()
       .then(() => client.db(DB_NAME))
@@ -25,12 +31,20 @@ function getDb() {
   return dbPromise;
 }
 
+async function ensureIndexes(collection) {
+  if (indexesReady) return;
+  await Promise.all([
+    collection.createIndex({ orderId: 1 }, { unique: true }),
+    collection.createIndex({ tracker: 1 }),
+    collection.createIndex({ createdAt: -1 }),
+  ]);
+  indexesReady = true;
+}
+
 async function ordersCollection() {
   const db = await getDb();
   const collection = db.collection(ORDERS_COLLECTION);
-  await collection.createIndex({ orderId: 1 }, { unique: true });
-  await collection.createIndex({ tracker: 1 });
-  await collection.createIndex({ createdAt: -1 });
+  await ensureIndexes(collection);
   return collection;
 }
 

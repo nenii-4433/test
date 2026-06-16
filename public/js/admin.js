@@ -45,8 +45,79 @@ function formatDate(iso) {
   });
 }
 
+function getProductCategory(productName) {
+  const name = (productName || "").toLowerCase();
+  if (name.includes("gym wear")) return "Gym Wear";
+  if (name.includes("trouser")) return "Trousers";
+  return "Shirts";
+}
+
+function categoryBadge(category) {
+  const slug = category.toLowerCase().replace(/\s+/g, "-");
+  return `<span class="category-badge category-badge--${slug}">${category}</span>`;
+}
+
 function statusBadge(status) {
   return `<span class="status-badge status-${status}">${status}</span>`;
+}
+
+function buildCatalogItems(product) {
+  const items = [];
+
+  (product.images || []).forEach((img) => {
+    items.push({
+      category: "Shirts",
+      name: img.name,
+      price: img.price,
+      sizes: (product.sizes || []).join(", "),
+    });
+  });
+
+  (product.trousers?.variants || []).forEach((v) => {
+    items.push({
+      category: "Trousers",
+      name: `${product.trousers.name} - ${v.color}`,
+      price: product.trousers.price,
+      sizes: (v.sizes || []).join(", "),
+    });
+  });
+
+  (product.gymWear?.variants || []).forEach((v) => {
+    items.push({
+      category: "Gym Wear",
+      name: `${product.gymWear.name} - ${v.style}`,
+      price: product.gymWear.price,
+      sizes: (product.gymWear.sizes || []).join(", "),
+    });
+  });
+
+  return items;
+}
+
+async function loadCatalog() {
+  const grid = document.getElementById("admin-catalog-grid");
+  if (!grid) return;
+
+  try {
+    const res = await fetch("/api/config");
+    const data = await res.json();
+    const items = buildCatalogItems(data.product || {});
+
+    grid.innerHTML = items
+      .map(
+        (item) => `
+      <div class="admin-catalog-card">
+        <span class="category-badge category-badge--${item.category.toLowerCase().replace(/\s+/g, "-")}">${item.category}</span>
+        <h3>${item.name}</h3>
+        <p class="admin-catalog-price">${formatPrice(item.price)}</p>
+        <p class="admin-catalog-sizes">Sizes: ${item.sizes}</p>
+      </div>
+    `
+      )
+      .join("");
+  } catch {
+    grid.innerHTML = '<p class="empty-state">Could not load catalog.</p>';
+  }
 }
 
 async function loadStats() {
@@ -66,13 +137,15 @@ async function loadOrders() {
   const tbody = document.getElementById("orders-body");
 
   if (orders.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No orders yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No orders yet.</td></tr>';
     return;
   }
 
   const statuses = ["pending", "paid", "processing", "shipped", "delivered", "cancelled"];
 
-  tbody.innerHTML = orders.map((o) => `
+  tbody.innerHTML = orders.map((o) => {
+    const category = getProductCategory(o.productName);
+    return `
     <tr>
       <td><code>${o.orderId}</code></td>
       <td>
@@ -80,6 +153,7 @@ async function loadOrders() {
         <span style="color:var(--text-muted);font-size:0.8rem">${o.email}</span><br>
         <span style="color:var(--text-dim);font-size:0.75rem">${o.address}, ${o.city}</span>
       </td>
+      <td>${categoryBadge(category)}</td>
       <td>${o.productName}</td>
       <td>${o.size || "—"}</td>
       <td>${o.quantity}</td>
@@ -92,7 +166,8 @@ async function loadOrders() {
         </select>
       </td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 
   tbody.querySelectorAll(".status-select").forEach((sel) => {
     sel.addEventListener("change", async () => {
@@ -109,7 +184,7 @@ async function loadOrders() {
 }
 
 async function loadDashboard() {
-  await Promise.all([loadStats(), loadOrders()]);
+  await Promise.all([loadStats(), loadOrders(), loadCatalog()]);
 }
 
 document.getElementById("login-form").addEventListener("submit", async (e) => {

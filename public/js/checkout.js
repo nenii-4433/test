@@ -17,7 +17,7 @@ function formatPrice(amount, currency = "PKR") {
   return new Intl.NumberFormat("en-PK", { style: "currency", currency: code }).format(value);
 }
 
-function getSelectedShirtName() {
+function getSelectedProductName() {
   return sessionStorage.getItem("selectedShirt") || "RawTee Nike Print Shirt White";
 }
 
@@ -29,18 +29,52 @@ function getSelectedSize() {
   return sizeSelect?.value || sessionStorage.getItem("selectedSize") || "";
 }
 
+function isTrousers(name) {
+  return name.toLowerCase().includes("trouser");
+}
+
+function isGymWear(name) {
+  return name.toLowerCase().includes("gym wear");
+}
+
+function getValidSizes(productName) {
+  if (isGymWear(productName)) {
+    return product?.gymWear?.sizes || ["S", "M", "L", "XL"];
+  }
+  if (isTrousers(productName) && product?.trousers?.variants) {
+    const variant = product.trousers.variants.find((v) => productName.includes(v.color));
+    return variant ? variant.sizes : product.trousers.variants[0].sizes;
+  }
+  return product?.sizes || ["S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"];
+}
+
+function populateSizeSelect(productName, selectedSize) {
+  if (!sizeSelect) return;
+  const sizes = getValidSizes(productName);
+  sizeSelect.innerHTML =
+    '<option value="">Select size</option>' +
+    sizes.map((s) => `<option value="${s}"${s === selectedSize ? " selected" : ""}>${s}</option>`).join("");
+}
+
 function getSelectedPricing() {
   const savedPrice = parseInt(sessionStorage.getItem("selectedPrice"), 10);
   const savedCompare = parseInt(sessionStorage.getItem("selectedCompareAt"), 10);
-  if (savedPrice && savedCompare) {
-    return { price: savedPrice, compareAt: savedCompare };
+  if (savedPrice) {
+    return { price: savedPrice, compareAt: savedCompare || savedPrice };
   }
 
-  const shirtName = getSelectedShirtName();
-  const match = product?.images?.find((img) => img.name === shirtName);
+  const productName = getSelectedProductName();
+  if (isGymWear(productName)) {
+    return { price: 2200, compareAt: 2200 };
+  }
+  if (isTrousers(productName)) {
+    return { price: 3700, compareAt: 3700 };
+  }
+
+  const match = product?.images?.find((img) => img.name === productName);
   if (match) return { price: match.price, compareAt: match.compareAt };
 
-  const isPlain = shirtName.toLowerCase().includes("plain");
+  const isPlain = productName.toLowerCase().includes("plain");
   return isPlain
     ? { price: 1900, compareAt: 2400 }
     : { price: 2000, compareAt: 3000 };
@@ -48,13 +82,14 @@ function getSelectedPricing() {
 
 function updateSummary() {
   if (!product) return;
+  const productName = getSelectedProductName();
   const { price, compareAt } = getSelectedPricing();
   const subtotal = price * quantity;
   const compareTotal = compareAt * quantity;
   const total = subtotal + shippingCost;
   const size = getSelectedSize();
 
-  document.getElementById("summary-name").textContent = getSelectedShirtName();
+  document.getElementById("summary-name").textContent = productName;
   document.getElementById("summary-size").textContent = size ? `Size: ${size}` : "Size: —";
   document.getElementById("summary-qty").textContent = "Qty: " + quantity;
   document.getElementById("summary-subtotal").textContent = formatPrice(subtotal, product.currency);
@@ -77,9 +112,9 @@ if (new URLSearchParams(window.location.search).get("cancelled")) {
 }
 
 const savedSize = sessionStorage.getItem("selectedSize");
-if (savedSize && sizeSelect) {
-  sizeSelect.value = savedSize;
-}
+const savedProduct = getSelectedProductName();
+populateSizeSelect(savedProduct, savedSize);
+if (savedSize && sizeSelect) sizeSelect.value = savedSize;
 
 if (sizeSelect) {
   sizeSelect.addEventListener("change", () => {
@@ -88,11 +123,11 @@ if (sizeSelect) {
   });
 }
 
-fetch("/api/config")
-  .then((r) => r.json())
+fetchStoreConfig()
   .then((data) => {
     product = data.product;
     if (product?.shipping) shippingCost = product.shipping;
+    populateSizeSelect(getSelectedProductName(), getSelectedSize());
     updateSummary();
   });
 
@@ -119,7 +154,7 @@ form.addEventListener("submit", async (e) => {
     zip: document.getElementById("zip").value.trim(),
     country: document.getElementById("country").value,
     quantity,
-    shirtName: getSelectedShirtName(),
+    shirtName: getSelectedProductName(),
     size,
   };
 
@@ -134,7 +169,7 @@ form.addEventListener("submit", async (e) => {
     if (!res.ok) {
       showAlert(data.error || "Something went wrong. Please try again.");
       payBtn.disabled = false;
-      payBtn.textContent = "Secure the Fit →";
+      payBtn.textContent = "Complete order";
       return;
     }
 
@@ -142,6 +177,6 @@ form.addEventListener("submit", async (e) => {
   } catch {
     showAlert("Network error. Please check your connection and try again.");
     payBtn.disabled = false;
-    payBtn.textContent = "Secure the Fit →";
+    payBtn.textContent = "Complete order";
   }
 });

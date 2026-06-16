@@ -54,8 +54,106 @@ const SHIPPING_COST = 200;
 
 const SIZES = ["S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"];
 
-function isValidSize(size) {
-  return SIZES.includes(size);
+const TROUSER_PRICE = 3700;
+
+const GYM_WEAR_PRICE = 2200;
+const GYM_SIZES = ["S", "M", "L", "XL"];
+
+const GYM_WEAR = {
+  id: "gym-wear",
+  name: "Gym Wear",
+  price: GYM_WEAR_PRICE,
+  compareAt: GYM_WEAR_PRICE,
+  description:
+    "Exclusive Gym Wear collection. Performance-ready fabric built for training, lifting, and everyday gym sessions.",
+  sizes: GYM_SIZES,
+  variants: [
+    {
+      style: "Style 1",
+      image: "/images/gym wear 1/MZ34900000266SATR-media-1.webp",
+      description:
+        "Exclusive Gym Wear — Style 1. Breathable performance fit for workouts and active days.",
+    },
+    {
+      style: "Style 2",
+      image: "/images/gym wear 2/MZ34900000265SATR-media-1.webp",
+      description:
+        "Exclusive Gym Wear — Style 2. Sleek gym-ready look with a comfortable athletic cut.",
+    },
+    {
+      style: "Style 3",
+      image: "/images/gym wear 3/MZ34900000267SATR-media-1.webp",
+      description:
+        "Exclusive Gym Wear — Style 3. Bold exclusive design — train hard, look sharp.",
+    },
+  ],
+};
+
+const TROUSERS = {
+  id: "rawtee-trousers",
+  name: "RawTee Composite Thickened Trousers",
+  price: TROUSER_PRICE,
+  compareAt: TROUSER_PRICE,
+  description:
+    "Premium composite thickened trousers. Durable fabric with a comfortable relaxed fit — built for everyday wear.",
+  variants: [
+    {
+      color: "Dark gray",
+      image: "/images/trousers/MZCHYHAM7591-media-1.jpg",
+      sizes: ["M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"],
+      description:
+        "Composite thickened trousers in dark gray. Versatile everyday fit with premium durable fabric.",
+    },
+    {
+      color: "Black",
+      image: "/images/trousers/MZCHYHAM7591-media-2.jpg",
+      sizes: ["M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"],
+      description:
+        "Composite thickened trousers in black. Classic go-to style — pairs with anything.",
+    },
+    {
+      color: "Army color",
+      image: "/images/trousers/MZCHYHAM7591-media-3.jpg",
+      sizes: ["M", "L", "XL", "2XL"],
+      description:
+        "Composite thickened trousers in army color. Bold utility look with a comfortable fit.",
+    },
+  ],
+};
+
+function isTrouserProduct(productName) {
+  return Boolean(productName && productName.toLowerCase().includes("trouser"));
+}
+
+function isGymWearProduct(productName) {
+  return Boolean(productName && productName.toLowerCase().includes("gym wear"));
+}
+
+function getGymWearStyle(productName) {
+  if (!productName) return GYM_WEAR.variants[0].style;
+  const match = GYM_WEAR.variants.find((v) => productName.includes(v.style));
+  return match ? match.style : GYM_WEAR.variants[0].style;
+}
+
+function getTrouserColor(productName) {
+  if (!productName) return TROUSERS.variants[0].color;
+  const match = TROUSERS.variants.find((v) => productName.includes(v.color));
+  return match ? match.color : TROUSERS.variants[0].color;
+}
+
+function getValidSizes(productName) {
+  if (isGymWearProduct(productName)) {
+    return GYM_SIZES;
+  }
+  if (isTrouserProduct(productName)) {
+    const variant = TROUSERS.variants.find((v) => v.color === getTrouserColor(productName));
+    return variant ? variant.sizes : TROUSERS.variants[0].sizes;
+  }
+  return SIZES;
+}
+
+function isValidSize(size, productName) {
+  return getValidSizes(productName).includes(size);
 }
 
 function getShirtType(shirtName) {
@@ -65,6 +163,16 @@ function getShirtType(shirtName) {
 
 function getShirtPricing(shirtName) {
   return PRICING[getShirtType(shirtName)];
+}
+
+function getOrderPricing(productName) {
+  if (isGymWearProduct(productName)) {
+    return { price: GYM_WEAR_PRICE, compareAt: GYM_WEAR_PRICE };
+  }
+  if (isTrouserProduct(productName)) {
+    return { price: TROUSER_PRICE, compareAt: TROUSER_PRICE };
+  }
+  return getShirtPricing(productName);
 }
 
 const PRODUCT = {
@@ -232,11 +340,51 @@ app.get("/admin.html", (_req, res) => {
   res.status(404).send("Not found");
 });
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    maxAge: process.env.VERCEL ? "7d" : 0,
+    etag: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const adminTokens = new Set();
+
+function clientIp(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.length) {
+    return forwarded.split(",")[0].trim();
+  }
+  return req.socket?.remoteAddress || "unknown";
+}
+
+function rateLimit({ max, windowMs }) {
+  const hits = new Map();
+
+  return (req, res, next) => {
+    const ip = clientIp(req);
+    const now = Date.now();
+    let entry = hits.get(ip);
+
+    if (!entry || now - entry.start > windowMs) {
+      entry = { start: now, count: 0 };
+    }
+
+    entry.count += 1;
+    hits.set(ip, entry);
+
+    if (entry.count > max) {
+      return res.status(429).json({
+        error: "Too many requests. Please wait a minute and try again.",
+      });
+    }
+
+    next();
+  };
+}
+
+const checkoutRateLimit = rateLimit({ max: 8, windowMs: 60 * 1000 });
 
 function requireAdmin(req, res, next) {
   const token = req.headers.authorization?.replace("Bearer ", "");
@@ -248,14 +396,14 @@ function requireAdmin(req, res, next) {
 
 // ── API Routes ──
 
-app.get("/api/config", (req, res) => {
+function buildStoreConfig() {
   const enrichImage = (img) => ({
     ...img,
     priceFormatted: formatPrice(img.price, PRODUCT.currency),
     compareAtFormatted: formatPrice(img.compareAt, PRODUCT.currency),
   });
 
-  res.json({
+  return {
     safepayPublicKey: process.env.SAFEPAY_PUBLIC_KEY || "",
     safepayEnv,
     product: {
@@ -267,11 +415,51 @@ app.get("/api/config", (req, res) => {
       shipping: SHIPPING_COST,
       shippingFormatted: formatPrice(SHIPPING_COST, PRODUCT.currency),
       sizes: SIZES,
+      trousers: {
+        ...TROUSERS,
+        priceFormatted: formatPrice(TROUSER_PRICE, PRODUCT.currency),
+        variants: TROUSERS.variants.map((v) => ({
+          ...v,
+          name: `${TROUSERS.name} - ${v.color}`,
+          price: TROUSER_PRICE,
+          compareAt: TROUSER_PRICE,
+          priceFormatted: formatPrice(TROUSER_PRICE, PRODUCT.currency),
+        })),
+      },
+      gymWear: {
+        ...GYM_WEAR,
+        priceFormatted: formatPrice(GYM_WEAR_PRICE, PRODUCT.currency),
+        variants: GYM_WEAR.variants.map((v) => ({
+          ...v,
+          name: `${GYM_WEAR.name} - ${v.style}`,
+          price: GYM_WEAR_PRICE,
+          compareAt: GYM_WEAR_PRICE,
+          priceFormatted: formatPrice(GYM_WEAR_PRICE, PRODUCT.currency),
+          sizes: GYM_SIZES,
+        })),
+      },
     },
-  });
+  };
+}
+
+let cachedStoreConfig;
+
+function getStoreConfig() {
+  if (!cachedStoreConfig) {
+    cachedStoreConfig = buildStoreConfig();
+  }
+  return cachedStoreConfig;
+}
+
+app.get("/api/config", (req, res) => {
+  res.set(
+    "Cache-Control",
+    "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400"
+  );
+  res.json(getStoreConfig());
 });
 
-app.post("/api/create-checkout-session", async (req, res) => {
+app.post("/api/create-checkout-session", checkoutRateLimit, async (req, res) => {
   if (!safepay) {
     return res.status(500).json({ error: "SafePay is not configured. Add SAFEPAY keys to .env" });
   }
@@ -282,15 +470,15 @@ app.post("/api/create-checkout-session", async (req, res) => {
     return res.status(400).json({ error: "Please fill in all required fields." });
   }
 
-  if (!size || !isValidSize(size)) {
+  if (!size || !isValidSize(size, shirtName || PRODUCT.name)) {
     return res.status(400).json({ error: "Please select a valid size." });
   }
 
   const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
   const orderId = generateOrderId();
   const storeUrl = getStoreUrl();
-  const shirtPricing = getShirtPricing(shirtName || PRODUCT.name);
-  const unitPrice = shirtPricing.price;
+  const itemPricing = getOrderPricing(shirtName || PRODUCT.name);
+  const unitPrice = itemPricing.price;
   const subtotal = unitPrice * qty;
   const totalAmount = safepayAmount(subtotal + SHIPPING_COST, PRODUCT.currency);
   const currency = PRODUCT.currency.toUpperCase();
@@ -326,7 +514,7 @@ app.post("/api/create-checkout-session", async (req, res) => {
       size,
       productName: shirtName || PRODUCT.name,
       unitPrice,
-      compareAt: shirtPricing.compareAt,
+      compareAt: itemPricing.compareAt,
       shipping: SHIPPING_COST,
       subtotal,
       total: subtotal + SHIPPING_COST,

@@ -5,27 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Confirmed — RawTee</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
   <header class="header">
     <div class="container header-inner">
-      <a href="/" class="logo">Raw<span>Tee</span></a>
+      <a href="/" class="logo">RawTee</a>
     </div>
   </header>
 
   <main class="success-page">
     <div class="success-card" id="success-content">
       <div class="success-icon">✓</div>
-      <h1>You're In! 🔥</h1>
-      <p>Fit secured. Confirmation email is on the way — check your inbox.</p>
+      <h1>Thank you for your order</h1>
+      <p>A confirmation email has been sent to your inbox.</p>
       <div class="order-id-display" id="order-id">Loading...</div>
-      <p style="color:var(--text-dim);font-size:0.85rem">Save this order ID — you'll need it if anything comes up.</p>
-      <a href="/" class="btn btn-primary btn-glow" style="margin-top:24px">Cop More Tees</a>
+      <p style="color:var(--text-dim);font-size:0.85rem">Please save your order ID for your records.</p>
+      <a href="/" class="btn btn-primary" style="margin-top:24px">Continue shopping</a>
     </div>
   </main>
+
+  <footer class="footer footer-compact">
+    <div class="container footer-bottom">
+      <p>Questions? Call <a href="tel:+923363301661">0336 3301661</a> · <a href="/policies.html#shipping">Shipping policy</a></p>
+    </div>
+  </footer>
 
   <script>
     const params = new URLSearchParams(window.location.search);
@@ -36,7 +42,7 @@
     const card = document.getElementById("success-content");
 
     if (hasError) {
-      card.querySelector("h1").textContent = "Payment Verification Failed";
+      card.querySelector("h1").textContent = "Payment verification failed";
       card.querySelector("p").textContent = "We could not verify your payment. Please contact support if you were charged.";
       orderEl.textContent = "—";
     } else if (orderId) {
