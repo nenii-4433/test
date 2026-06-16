@@ -243,6 +243,25 @@ function safepayAmount(amount, currency = "usd") {
   return Math.round(amount);
 }
 
+function getOrderVariantDetails(productName = "") {
+  const lower = productName.toLowerCase();
+
+  if (lower.includes("trouser")) {
+    const color = productName.split(" - ").pop() || "Standard";
+    return { category: "Trousers", colorOrStyle: color };
+  }
+
+  if (lower.includes("gym wear")) {
+    const style = productName.split(" - ").pop() || "Standard";
+    return { category: "Gym Wear", colorOrStyle: style };
+  }
+
+  let colorOrStyle = "Standard";
+  if (lower.includes("white")) colorOrStyle = "White";
+  if (lower.includes("black")) colorOrStyle = "Black";
+  return { category: "Shirts", colorOrStyle };
+}
+
 function createMailer() {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return null;
   return nodemailer.createTransport({
@@ -289,6 +308,14 @@ async function sendOrderReceipt(order, mode = "placed") {
 
   const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
   const total = formatPrice(order.total, order.currency);
+  const unitPrice = formatPrice(order.unitPrice || 0, order.currency);
+  const shipping = formatPrice(order.shipping || 0, order.currency);
+  const subtotal = formatPrice(order.subtotal || 0, order.currency);
+  const { category, colorOrStyle } = getOrderVariantDetails(order.productName || "");
+  const orderDate = new Date(order.createdAt || Date.now()).toLocaleString("en-PK", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
   const paymentLabel =
     order.paymentMethod === "cod"
       ? "Cash on Delivery (COD)"
@@ -312,11 +339,19 @@ async function sendOrderReceipt(order, mode = "placed") {
         <p style="color:#64748b">${message}</p>
         <div style="background:#f8fafc;border-radius:12px;padding:24px;margin:24px 0">
           <p style="margin:0 0 8px"><strong>Order ID:</strong> ${order.orderId}</p>
+          <p style="margin:0 0 8px"><strong>Order Date:</strong> ${orderDate}</p>
+          <p style="margin:0 0 8px"><strong>Category:</strong> ${category}</p>
           <p style="margin:0 0 8px"><strong>Product:</strong> ${order.productName}</p>
+          <p style="margin:0 0 8px"><strong>Color / Style:</strong> ${colorOrStyle}</p>
           <p style="margin:0 0 8px"><strong>Size:</strong> ${order.size || "—"}</p>
           <p style="margin:0 0 8px"><strong>Quantity:</strong> ${order.quantity}</p>
+          <p style="margin:0 0 8px"><strong>Unit Price:</strong> ${unitPrice}</p>
+          <p style="margin:0 0 8px"><strong>Subtotal:</strong> ${subtotal}</p>
+          <p style="margin:0 0 8px"><strong>Shipping:</strong> ${shipping}</p>
           <p style="margin:0 0 8px"><strong>Payment method:</strong> ${paymentLabel}</p>
           <p style="margin:0 0 8px"><strong>Total:</strong> ${total}</p>
+          <p style="margin:0 0 8px"><strong>Phone:</strong> ${order.phone || "N/A"}</p>
+          <p style="margin:0 0 8px"><strong>Alternate Phone:</strong> ${order.alternatePhone || "N/A"}</p>
           <p style="margin:0"><strong>Shipping to:</strong><br>${order.address}<br>${order.areaSector || ""}<br>${order.city}, Pakistan</p>
         </div>
         <p style="color:#64748b;font-size:14px">We'll send you a shipping update once your order is on its way.</p>
@@ -332,7 +367,13 @@ async function sendOrderReceipt(order, mode = "placed") {
       subject: `New Order — ${order.orderId}`,
       html: `
         <h2>New order received</h2>
+        <p><strong>Order ID:</strong> ${order.orderId}</p>
         <p><strong>${order.name}</strong> (${order.email}) ordered ${order.quantity}x ${order.productName} — Size ${order.size || "—"}</p>
+        <p>Category: ${category}</p>
+        <p>Color/Style: ${colorOrStyle}</p>
+        <p>Unit Price: ${unitPrice}</p>
+        <p>Subtotal: ${subtotal}</p>
+        <p>Shipping: ${shipping}</p>
         <p>Payment: ${paymentLabel}</p>
         <p>Total: ${total}</p>
         <p>Address: ${order.address}, ${order.areaSector || ""}, ${order.city}, Pakistan</p>
